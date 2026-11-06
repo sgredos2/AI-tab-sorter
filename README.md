@@ -1,8 +1,9 @@
 # OpenRouter Tab Sorter
 
-A [Sine](https://github.com/CosmoCreeper/Sine) mod for [Zen Browser](https://zen-browser.app). One click sorts the loose tabs of your current space into Zen folders, named and chosen by an AI model you pick on [OpenRouter](https://openrouter.ai).
+A [Sine](https://github.com/CosmoCreeper/Sine) mod for [Zen Browser](https://zen-browser.app). One click sorts the loose tabs of your current space into tab groups (or Zen folders, your choice), named and given an emoji icon by an AI model you pick on [OpenRouter](https://openrouter.ai).
 
-- Fits tabs into your existing folders first, and makes new ones only for tabs that share a topic.
+- Fits tabs into your existing groups first, and makes new ones only for tabs that share a topic.
+- The model also picks an emoji icon (and a colour for tab groups) for each new group.
 - Never touches pinned tabs, essentials, splits or tabs already in a folder.
 - Cheap: a sort of ~30 tabs is about 1-2 thousand tokens, a few hundredths of a cent with a small model such as `z-ai/glm-5.3-flash`.
 - Original code, written from scratch (not a fork of another tab-sorting mod).
@@ -15,7 +16,7 @@ A [Sine](https://github.com/CosmoCreeper/Sine) mod for [Zen Browser](https://zen
 
 ## Use
 
-- **Alt+Shift+G**, the folder button at the bottom of the sidebar, or right-click a tab → *Sort tabs into folders (AI)*.
+- **Alt+Shift+G**, the sparkles button on the line above the loose tabs (next to *Clear*), or right-click a tab → *Sort tabs into groups (AI)*.
 - Select several tabs first to sort only those.
 
 ## Privacy
@@ -29,14 +30,17 @@ Sorting sends, for each loose tab, **its title and its site name** (for example 
 | OpenRouter API key | Required. |
 | Model | Default `z-ai/glm-5.3-flash`; any OpenRouter model works. |
 | Provider order | Optional, e.g. `Wafer`. Others are used if these fail. |
-| Most new folders | 4 / 6 / 8 / 12. |
+| Sort into | Tab groups (default) or Zen folders. |
+| Emoji icons | Let the model pick an icon for each new group. |
+| Most new groups | 4 / 6 / 8 / 12. |
 | Send site name | Off: titles only. |
 | Never send tabs from | Comma-separated words matched against the address. |
 | Button / shortcut | Turn them off if you don't want them. |
 
 ## Notes
 
-- It relies on Zen's own folder code (`gZenFolders`), so a big Zen update can break it. Please open an issue then.
+- Icons: a Zen folder takes the emoji as its icon; a tab group takes it with the Advanced Tab Groups mod, otherwise the emoji is put in front of its name.
+- It relies on Zen's own folder and tab-group code (`gZenFolders`, `gBrowser.addTabGroup`), so a big Zen update can break it. Please open an issue then.
 - The model decides the grouping; it can be wrong. Undo with Zen's usual means (drag tabs out of the folder).
 
 ## По-русски

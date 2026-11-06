@@ -14,4 +14,8 @@ assert.equal(p[1].existing,"Work");
 assert.throws(()=>h.parseAnswer("no json",3,[],5));
 const m=h.buildMessages([{host:"a.com",title:"T"}],["Work"],4,false);
 assert(m[1].content.includes("0. T")&&!m[1].content.includes("a.com"));
+assert.equal(h.pickEmoji("  🚗 cars"),"🚗"); assert.equal(h.pickEmoji("cars"),""); assert.equal(h.pickEmoji("👨‍👩‍👧 family"),"👨‍👩‍👧");
+const q=h.parseAnswer('{"groups":[{"name":"Cars","icon":"🚗","color":"Blue","tabs":[0,1]},{"name":"Food","icon":"x","color":"mauve","tabs":[2,3]}]}',4,[],5);
+assert.equal(q[0].icon,"🚗"); assert.equal(q[0].color,"blue"); assert.equal(q[1].icon,""); assert.equal(q[1].color,"");
+assert(h.emojiSvg("🚗").startsWith("data:image/svg+xml"));
 console.log("all ok");

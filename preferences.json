@@ -25,14 +25,49 @@
   },
   {
     "type": "dropdown",
-    "label": "Most new folders per sort",
+    "label": "Sort into",
+    "property": "tabsorter.mode",
+    "defaultValue": "groups",
+    "options": [
+      {
+        "label": "Tab groups (like the original Tidy Tabs)",
+        "value": "groups"
+      },
+      {
+        "label": "Zen folders",
+        "value": "folders"
+      }
+    ]
+  },
+  {
+    "type": "checkbox",
+    "label": "Let the model pick an emoji icon for each new group",
+    "property": "tabsorter.icons",
+    "defaultValue": true,
+    "description": "A folder gets it as its icon; a tab group gets it too with Advanced Tab Groups installed, otherwise the emoji leads its name."
+  },
+  {
+    "type": "dropdown",
+    "label": "Most new groups per sort",
     "property": "tabsorter.max_groups",
     "defaultValue": "8",
     "options": [
-      { "label": "4", "value": "4" },
-      { "label": "6", "value": "6" },
-      { "label": "8", "value": "8" },
-      { "label": "12", "value": "12" }
+      {
+        "label": "4",
+        "value": "4"
+      },
+      {
+        "label": "6",
+        "value": "6"
+      },
+      {
+        "label": "8",
+        "value": "8"
+      },
+      {
+        "label": "12",
+        "value": "12"
+      }
     ]
   },
   {
@@ -50,7 +85,7 @@
   },
   {
     "type": "checkbox",
-    "label": "Button in the sidebar",
+    "label": "Button on the line above the loose tabs (next to Clear)",
     "property": "tabsorter.button",
     "defaultValue": true,
     "description": "Applies after a restart."

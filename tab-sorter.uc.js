@@ -16,6 +16,8 @@
     exclude: "tabsorter.exclude",
     sendHosts: "tabsorter.send_hosts",
     button: "tabsorter.button",
+    mode: "tabsorter.mode",
+    icons: "tabsorter.icons",
     shortcut: "tabsorter.shortcut",
   };
   const DEFAULTS = {
@@ -66,27 +68,54 @@
       .trim();
   }
 
+  // The first emoji of the text, or ""
+  function pickEmoji(text) {
+    const value = String(text || "").trim();
+    if (!value || !/\p{Extended_Pictographic}/u.test(value)) {
+      return "";
+    }
+    try {
+      for (const { segment } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(value)) {
+        if (/\p{Extended_Pictographic}/u.test(segment)) {
+          return segment;
+        }
+      }
+    } catch (err) {
+      const match = value.match(/\p{Extended_Pictographic}[\u{FE0F}\u{200D}\p{Extended_Pictographic}]*/u);
+      return match ? match[0] : "";
+    }
+    return "";
+  }
+
+  function emojiSvg(emoji) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text x="8" y="13" font-size="13" text-anchor="middle">${emoji}</text></svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  }
+
   function shortTitle(title) {
     return String(title || "").replace(/\s+/g, " ").trim().slice(0, 90);
   }
 
-  const SYSTEM_PROMPT = `You sort a person's open browser tabs into folders by topic.
-You get a numbered list of tabs ("number. [site] title") and the names of folders that already exist.
+  const COLORS = ["blue", "purple", "cyan", "orange", "yellow", "pink", "green", "gray", "red"];
+
+  const SYSTEM_PROMPT = `You sort a person's open browser tabs into groups by topic.
+You get a numbered list of tabs ("number. [site] title") and the names of groups that already exist.
 Answer with ONLY a JSON object, no other text:
-{"groups":[{"name":"Folder name","tabs":[0,3,5]}]}
+{"groups":[{"name":"Group name","icon":"🚗","color":"blue","tabs":[0,3,5]}]}
 Rules:
-- Put a tab in an existing folder (use its name exactly) when it clearly fits that folder.
-- Otherwise make a new folder only when at least 2 tabs share a topic, task or project.
-- A tab that fits nothing is left out. Never force a tab into a folder.
-- A tab is in at most one folder.
+- Put a tab in an existing group (use its name exactly) when it clearly fits that group.
+- Otherwise make a new group only when at least 2 tabs share a topic, task or project.
+- A tab that fits nothing is left out. Never force a tab into a group.
+- A tab is in at most one group.
 - Names are 1-3 words, specific (not "Misc" or "Other"), in the language most of the titles are written in.
-- At most MAX new folders.`;
+- "icon" is ONE emoji that suits the group's topic. "color" is one of: COLORS.
+- At most MAX new groups.`;
 
   function buildMessages(items, folderNames, maxGroups, sendHosts) {
     const lines = items.map((item, i) => (sendHosts ? `${i}. [${item.host}] ${item.title}` : `${i}. ${item.title}`));
     const folders = folderNames.length ? folderNames.map((n) => `- ${n}`).join("\n") : "(none)";
     return [
-      { role: "system", content: SYSTEM_PROMPT.replace("MAX", String(maxGroups)) },
+      { role: "system", content: SYSTEM_PROMPT.replace("MAX", String(maxGroups)).replace("COLORS", COLORS.join(", ")) },
       { role: "user", content: `Existing folders:\n${folders}\n\nTabs:\n${lines.join("\n")}` },
     ];
   }
@@ -139,7 +168,8 @@ Rules:
           }
           fresh++;
         }
-        merged.set(key, { name: existing || name, existing, indices: [] });
+        const color = COLORS.includes(String(group.color || "").toLowerCase()) ? String(group.color).toLowerCase() : "";
+        merged.set(key, { name: existing || name, existing, icon: pickEmoji(group.icon), color, indices: [] });
       }
       for (const i of indices) {
         taken.add(i);
@@ -150,7 +180,7 @@ Rules:
     return [...merged.values()].filter((g) => g.existing || g.indices.length >= 2);
   }
 
-  globalThis.__tabSorterHelpers = { isExcluded, cleanLabel, shortTitle, buildMessages, parseAnswer, DEFAULTS };
+  globalThis.__tabSorterHelpers = { isExcluded, cleanLabel, shortTitle, pickEmoji, emojiSvg, buildMessages, parseAnswer, DEFAULTS };
 
   if (typeof location === "undefined" || location.href !== "chrome://browser/content/browser.xhtml" || window.__tabSorter) {
     return;
@@ -182,17 +212,27 @@ Rules:
     return window.gZenWorkspaces?.activeWorkspace || null;
   }
 
-  function foldersInSpace() {
+  // "groups": Firefox tab groups (like the original Tidy Tabs); "folders": Zen folders
+  function currentMode() {
+    const wanted = String(readPref(PREFS.mode, "groups"));
+    if (wanted === "groups" && typeof gBrowser.addTabGroup === "function") {
+      return "groups";
+    }
+    return "folders";
+  }
+
+  function containersInSpace(mode) {
     const element = window.gZenWorkspaces?.activeWorkspaceElement;
     const space = activeSpace();
-    return [...document.querySelectorAll("zen-folder")].filter((folder) => {
-      if (!folder.isConnected || !cleanLabel(folder.label)) {
+    const all = mode === "folders" ? [...document.querySelectorAll("zen-folder")] : [...document.querySelectorAll("tab-group:not([split-view-group])")].filter((g) => !g.isZenFolder && g.localName !== "zen-folder");
+    return all.filter((group) => {
+      if (!group.isConnected || !cleanLabel(group.label)) {
         return false;
       }
       if (element) {
-        return element.contains(folder);
+        return element.contains(group);
       }
-      return !space || !folder.getAttribute("zen-workspace-id") || folder.getAttribute("zen-workspace-id") === space;
+      return !space || !group.getAttribute("zen-workspace-id") || group.getAttribute("zen-workspace-id") === space;
     });
   }
 
@@ -289,7 +329,34 @@ Rules:
 
   function setBusy(on) {
     busy = on;
-    document.getElementById("tabsorter-button")?.toggleAttribute("busy", on);
+    for (const button of document.querySelectorAll(".tabsorter-button")) {
+      button.toggleAttribute("busy", on);
+    }
+  }
+
+  // The model's emoji as the group's icon: a Zen folder's icon, or Advanced
+  // Tab Groups' icon when that mod is there; else the emoji leads the name
+  function applyIcon(container, emoji, name) {
+    if (!emoji || !container) {
+      return;
+    }
+    try {
+      if (container.localName === "zen-folder" && window.gZenFolders?.setFolderUserIcon) {
+        window.gZenFolders.setFolderUserIcon(container, emojiSvg(emoji));
+        container.dispatchEvent(new CustomEvent("TabGroupUpdate", { bubbles: true }));
+        if (container.iconURL) {
+          return;
+        }
+      } else if (window.advancedTabGroups?.applyGroupIcon) {
+        window.advancedTabGroups.applyGroupIcon(container, emoji);
+        return;
+      }
+    } catch (err) {
+      console.warn("[Tab Sorter] Couldn't set the icon:", err);
+    }
+    try {
+      container.label = `${emoji} ${name}`;
+    } catch (err) {}
   }
 
   async function sortTabs() {
@@ -300,7 +367,8 @@ Rules:
       toast("Tab Sorter does nothing in private windows.");
       return;
     }
-    if (!window.gZenFolders?.createFolder) {
+    const mode = currentMode();
+    if (mode === "folders" && !window.gZenFolders?.createFolder) {
       toast("This Zen has no folders to sort into.");
       return;
     }
@@ -312,10 +380,11 @@ Rules:
     setBusy(true);
     toast("Sorting tabs…", 60000);
     try {
-      const folders = foldersInSpace();
-      const names = [...new Set(folders.map((f) => cleanLabel(f.label)))];
+      const existing = containersInSpace(mode);
+      const names = [...new Set(existing.map((g) => cleanLabel(g.label)))];
       const maxGroups = Math.max(1, parseInt(readPref(PREFS.maxGroups, DEFAULTS.maxGroups), 10) || DEFAULTS.maxGroups);
       const sendHosts = readPref(PREFS.sendHosts, true) !== false;
+      const useIcons = readPref(PREFS.icons, true) !== false;
       const text = await ask(buildMessages(items, names, maxGroups, sendHosts));
       const plan = parseAnswer(text, items.length, names, maxGroups);
       if (!plan.length) {
@@ -331,19 +400,29 @@ Rules:
           continue;
         }
         try {
-          const folder = group.existing ? folders.find((f) => cleanLabel(f.label) === group.existing) : null;
-          if (folder?.isConnected) {
-            folder.addTabs(tabs);
+          const target = group.existing ? existing.find((g) => cleanLabel(g.label) === group.existing) : null;
+          if (target?.isConnected) {
+            target.addTabs(tabs);
           } else {
-            window.gZenFolders.createFolder(tabs, { label: group.name, workspaceId: space });
+            let created;
+            if (mode === "groups") {
+              created = gBrowser.addTabGroup(tabs, { label: group.name, color: group.color || undefined, insertBefore: tabs[0] });
+            } else {
+              created = window.gZenFolders.createFolder(tabs, { label: group.name, workspaceId: space });
+              created = created?.localName === "zen-folder" ? created : tabs[0]?.group;
+            }
             made++;
+            if (useIcons) {
+              applyIcon(created || tabs[0]?.group, group.icon, group.name);
+            }
           }
           moved += tabs.length;
         } catch (err) {
           console.warn("[Tab Sorter] Couldn't fill", group.name, err);
         }
       }
-      toast(moved ? `Sorted ${moved} tabs (${made} new folder${made === 1 ? "" : "s"}).` : "Nothing was moved.");
+      const noun = mode === "groups" ? "group" : "folder";
+      toast(moved ? `Sorted ${moved} tabs (${made} new ${noun}${made === 1 ? "" : "s"}).` : "Nothing was moved.");
     } catch (err) {
       console.warn("[Tab Sorter]", err);
       toast(err?.message || String(err), 6000);
@@ -353,33 +432,49 @@ Rules:
   }
 
   // ---------- where you start it
-  // (the sidebar's bottom bar is built after this script runs, so wait for it)
-  function addButton(attempt = 0) {
+  const SPARKLES =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='context-fill'%3E%3Cpath d='M6.2 2.2l1 2.9 2.9 1-2.9 1-1 2.9-1-2.9-2.9-1 2.9-1z'/%3E%3Cpath d='M12 8.6l.6 1.7 1.7.6-1.7.6L12 13.2l-.6-1.7-1.7-.6 1.7-.6z'/%3E%3Cpath d='M12.3 1.8l.4 1.1 1.1.4-1.1.4-.4 1.1-.4-1.1-1.1-.4 1.1-.4z'/%3E%3C/svg%3E";
+
+  // Each space has a line between its pinned and loose tabs (with Zen's "Clear"
+  // on it): the button sits there, just before "Clear"
+  function placeButtons() {
     if (readPref(PREFS.button, true) === false) {
-      document.getElementById("tabsorter-button")?.remove();
+      document.querySelectorAll(".tabsorter-button").forEach((b) => b.remove());
       return;
     }
-    if (document.getElementById("tabsorter-button")) {
-      return;
-    }
-    const foot =
-      document.getElementById("zen-sidebar-foot-buttons") ||
-      (attempt >= 40 ? document.getElementById("zen-sidebar-top-buttons") || document.getElementById("nav-bar") : null);
-    if (!foot) {
-      if (attempt < 80) {
-        setTimeout(() => addButton(attempt + 1), 500);
-      } else {
-        log("couldn't find a place for the button; use Alt+Shift+G or the tab menu");
+    const lines = document.querySelectorAll(".pinned-tabs-container-separator");
+    for (const line of lines) {
+      if (line.querySelector(".tabsorter-button")) {
+        continue;
       }
-      return;
+      const button = document.createXULElement("toolbarbutton");
+      button.className = "tabsorter-button";
+      button.setAttribute("tooltiptext", "Sort tabs into groups (AI)");
+      button.addEventListener("command", sortTabs);
+      button.addEventListener("click", (event) => {
+        if (event.button === 0) {
+          event.stopPropagation();
+        }
+      });
+      const clear = line.querySelector(".zen-workspace-close-unpinned-tabs-button, #zen-workspaces-close-unpinned-tabs-button, [class*='close-unpinned'], [class*='clear']");
+      if (clear && clear.parentNode) {
+        clear.parentNode.insertBefore(button, clear);
+      } else {
+        line.appendChild(button);
+      }
     }
-    const button = document.createXULElement("toolbarbutton");
-    button.id = "tabsorter-button";
-    button.className = "toolbarbutton-1";
-    button.setAttribute("tooltiptext", "Sort tabs into folders (AI)");
-    button.addEventListener("command", sortTabs);
-    foot.appendChild(button);
-    log("button added to", foot.id);
+  }
+
+  function watchButtons() {
+    let timer = null;
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(placeButtons, 400);
+    };
+    new MutationObserver(schedule).observe(document.getElementById("browser") || document.documentElement, { childList: true, subtree: true });
+    placeButtons();
+    gBrowser.tabContainer.addEventListener("TabSelect", schedule);
+    window.addEventListener("ZenWorkspaceChanged", schedule);
   }
 
   function addMenuItem(attempt = 0) {
@@ -395,7 +490,7 @@ Rules:
     }
     const item = document.createXULElement("menuitem");
     item.id = "tabsorter-menuitem";
-    item.setAttribute("label", "Sort tabs into folders (AI)");
+    item.setAttribute("label", "Sort tabs into groups (AI)");
     item.addEventListener("command", sortTabs);
     const anchor = document.getElementById("context_duplicateTab") || document.getElementById("context_reloadTab");
     if (anchor?.parentNode) {
@@ -421,9 +516,10 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, version: "1.0.1" };
-  addButton();
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.0" };
+  document.documentElement.style.setProperty("--tabsorter-icon", `url("${SPARKLES}")`);
+  setTimeout(watchButtons, 1500);
   addMenuItem();
   addShortcut();
-  log("ready (Alt+Shift+G, tab menu or the sidebar button)");
+  log("ready (Alt+Shift+G, tab menu or the button next to Clear)");
 })();

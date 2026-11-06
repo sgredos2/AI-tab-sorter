@@ -1,17 +1,36 @@
-#tabsorter-button {
-  list-style-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='context-fill' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 4.5a1 1 0 0 1 1-1h3l1.2 1.5H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z'/%3E%3Cpath d='M8 7.6l.5 1.2 1.2.5-1.2.5L8 11l-.5-1.2-1.2-.5 1.2-.5z' fill='context-fill'/%3E%3C/svg%3E");
-  -moz-context-properties: fill, stroke;
+.tabsorter-button {
+  appearance: none;
+  -moz-context-properties: fill;
   fill: currentColor;
-  stroke: currentColor;
+  list-style-image: var(--tabsorter-icon);
+  min-width: 0;
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  padding: 3px;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s;
+  flex: none;
 }
 
-#tabsorter-button[busy] {
-  opacity: 0.5;
-  animation: tabsorter-pulse 1s ease-in-out infinite;
+.tabsorter-button .toolbarbutton-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tabsorter-button:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.tabsorter-button[busy] {
+  opacity: 1;
+  animation: tabsorter-pulse 0.9s ease-in-out infinite;
 }
 
 @keyframes tabsorter-pulse {
-  50% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 #tabsorter-toast {

@@ -463,6 +463,7 @@ Rules:
       const button = document.createXULElement("toolbarbutton");
       button.className = "tabsorter-button";
       button.setAttribute("tooltiptext", "Sort tabs into groups (AI)");
+      button.setAttribute("image", SPARKLES);
       button.addEventListener("command", sortTabs);
       button.addEventListener("click", (event) => {
         if (event.button === 0) {
@@ -530,8 +531,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.1" };
-  document.documentElement.style.setProperty("--tabsorter-icon", `url("${SPARKLES}")`);
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.2" };
   setTimeout(watchButtons, 1500);
   addMenuItem();
   addShortcut();

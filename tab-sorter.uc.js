@@ -435,6 +435,16 @@ Rules:
   const SPARKLES =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='context-fill'%3E%3Cpath d='M6.2 2.2l1 2.9 2.9 1-2.9 1-1 2.9-1-2.9-2.9-1 2.9-1z'/%3E%3Cpath d='M12 8.6l.6 1.7 1.7.6-1.7.6L12 13.2l-.6-1.7-1.7-.6 1.7-.6z'/%3E%3Cpath d='M12.3 1.8l.4 1.1 1.1.4-1.1.4-.4 1.1-.4-1.1-1.1-.4 1.1-.4z'/%3E%3C/svg%3E";
 
+  // The button wears the colour of Zen's own "Clear" next to it
+  function matchColor(button, like) {
+    try {
+      const color = getComputedStyle(like).color;
+      if (color && button.style.color !== color) {
+        button.style.color = color;
+      }
+    } catch (err) {}
+  }
+
   // Each space has a line between its pinned and loose tabs (with Zen's "Clear"
   // on it): the button sits there, just before "Clear"
   function placeButtons() {
@@ -443,8 +453,11 @@ Rules:
       return;
     }
     const lines = document.querySelectorAll(".pinned-tabs-container-separator");
+    const CLEAR = ".zen-workspace-close-unpinned-tabs-button, #zen-workspaces-close-unpinned-tabs-button, [class*='close-unpinned'], [class*='clear']";
     for (const line of lines) {
-      if (line.querySelector(".tabsorter-button")) {
+      const have = line.querySelector(".tabsorter-button");
+      if (have) {
+        matchColor(have, line.querySelector(CLEAR) || line);
         continue;
       }
       const button = document.createXULElement("toolbarbutton");
@@ -456,12 +469,13 @@ Rules:
           event.stopPropagation();
         }
       });
-      const clear = line.querySelector(".zen-workspace-close-unpinned-tabs-button, #zen-workspaces-close-unpinned-tabs-button, [class*='close-unpinned'], [class*='clear']");
+      const clear = line.querySelector(CLEAR);
       if (clear && clear.parentNode) {
         clear.parentNode.insertBefore(button, clear);
       } else {
         line.appendChild(button);
       }
+      matchColor(button, clear || line);
     }
   }
 
@@ -516,7 +530,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.0" };
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.1" };
   document.documentElement.style.setProperty("--tabsorter-icon", `url("${SPARKLES}")`);
   setTimeout(watchButtons, 1500);
   addMenuItem();

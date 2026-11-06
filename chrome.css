@@ -1,5 +1,6 @@
 .tabsorter-button {
   appearance: none;
+  color: inherit;
   -moz-context-properties: fill;
   fill: currentColor;
   list-style-image: var(--tabsorter-icon);

@@ -124,7 +124,7 @@
       } else if (name.split("-").includes(word)) {
         score = 400 - name.length;
       } else if (name.includes(word)) {
-        score = 300 - name.length;
+        score = 180 - name.length;
       } else if (tags.includes(` ${word} `)) {
         score = 200 - name.length;
       } else if (parts.length > 1 && parts.every((part) => tags.includes(` ${part} `))) {
@@ -132,6 +132,10 @@
       }
       if (/-off$|-filled$/.test(name)) {
         score -= 40;
+      }
+      // a brand's logo only when asked for by name
+      if (name.startsWith("brand-") && !word.startsWith("brand-")) {
+        score -= 150;
       }
       if (score > bestScore) {
         bestScore = score;
@@ -760,7 +764,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.4.0" };
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.4.1" };
   setTimeout(watchButtons, 1500);
   addMenuItem();
   addShortcut();

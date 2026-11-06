@@ -1,55 +1,74 @@
-.tabsorter-button {
-  appearance: none;
-  color: inherit;
+@keyframes tabsorter-sweep {
+  0%, 100% { transform: rotate(0deg); }
+  20%, 60% { transform: rotate(-15deg); }
+  40%, 80% { transform: rotate(15deg); }
+}
+
+.pinned-tabs-container-separator .tabsorter-button {
+  appearance: none !important;
+  /* idle: the button is a real 1px bar in the divider's colour, so the line
+     stays whole; hovered, it becomes the brush (like Zen's own Clear) */
+  height: 1px !important;
+  min-height: 0 !important;
   min-width: 0;
-  width: auto;
-  max-width: 0;
-  height: 22px;
-  margin: 0;
-  padding: 0;
-  border-radius: 6px;
-  opacity: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: var(--zen-pinned-separator-color) !important;
   overflow: hidden;
   pointer-events: none;
-  transition: opacity 0.15s, max-width 0.15s, background 0.15s;
-  flex: none;
-}
-
-.tabsorter-button[show],
-.tabsorter-button[busy],
-.pinned-tabs-container-separator:hover .tabsorter-button {
-  max-width: 28px;
-  margin: 0 2px 0 0;
-  padding: 0 4px;
-  opacity: 0.7;
-  pointer-events: auto;
-}
-
-.tabsorter-button .toolbarbutton-icon {
-  -moz-context-properties: fill;
+  flex-shrink: 0;
+  color: inherit;
   fill: currentColor;
-  width: 13px;
-  height: 13px;
-  margin: 0;
 }
 
+.tabsorter-button .toolbarbutton-icon,
 .tabsorter-button .toolbarbutton-text {
+  display: none !important;
+}
+
+.tabsorter-button .tabsorter-broom {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s ease-in-out;
+}
+
+.tabsorter-button .tabsorter-broom path {
+  fill: currentColor;
+}
+
+.pinned-tabs-container-separator:hover .tabsorter-button,
+#navigator-toolbox[zen-has-implicit-hover="true"] .pinned-tabs-container-separator .tabsorter-button {
+  height: auto !important;
+  background: none !important;
+  margin-inline-start: 8px !important;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pinned-tabs-container-separator:hover .tabsorter-broom,
+#navigator-toolbox[zen-has-implicit-hover="true"] .tabsorter-broom {
+  opacity: 0.5;
+}
+
+.pinned-tabs-container-separator:hover .tabsorter-button:hover .tabsorter-broom {
+  opacity: 1;
+}
+
+.pinned-tabs-container-separator .tabsorter-button:active:hover .tabsorter-broom {
+  transform: translateY(2px);
+}
+
+.tabsorter-button[busy] .tabsorter-broom {
+  opacity: 1 !important;
+  animation: tabsorter-sweep 0.8s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+:root:not([zen-sidebar-expanded="true"]) .tabsorter-button {
   display: none;
-}
-
-.tabsorter-button[show]:hover,
-.pinned-tabs-container-separator:hover .tabsorter-button:hover {
-  opacity: 1;
-  background: color-mix(in srgb, currentColor 14%, transparent);
-}
-
-.tabsorter-button[busy] {
-  opacity: 1;
-  animation: tabsorter-pulse 0.9s ease-in-out infinite;
-}
-
-@keyframes tabsorter-pulse {
-  50% { opacity: 0.35; }
 }
 
 #tabsorter-toast {

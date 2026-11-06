@@ -16,7 +16,7 @@ A [Sine](https://github.com/CosmoCreeper/Sine) mod for [Zen Browser](https://zen
 
 ## Use
 
-- **Alt+Shift+G**, the brush button on the line above the loose tabs (next to *Clear*), or right-click a tab → *Sort tabs into groups (AI)*.
+- **Alt+Shift+G**, the broom button on the line above the loose tabs (next to *Clear*), or right-click a tab → *Sort tabs into groups (AI)*.
 - Select several tabs first to sort only those.
 
 ## Privacy
@@ -39,13 +39,17 @@ Sorting sends, for each loose tab, **its title and its site name** (for example 
 
 ## Notes
 
-- Icons: a Zen folder takes the emoji as its icon; a tab group takes it with the Advanced Tab Groups mod, otherwise the emoji is put in front of its name.
+- Icons: a Zen folder takes the emoji as its icon; a tab group takes it with the Advanced Tab Groups mod (recommended for groups), otherwise the emoji is put in front of its name.
 - It relies on Zen's own folder and tab-group code (`gZenFolders`, `gBrowser.addTabGroup`), so a big Zen update can break it. Please open an issue then.
 - The model decides the grouping; it can be wrong. Undo with Zen's usual means (drag tabs out of the folder).
 
 ## По-русски
 
 Мод для Zen через Sine: по одной кнопке (Alt+Shift+G, кнопка в сайдбаре или пункт в меню вкладки) раскладывает свободные вкладки текущего пространства по папкам с помощью модели на OpenRouter. Сначала подбирает уже существующие папки, новые создаёт только для вкладок с общей темой. Отправляются только заголовки и названия сайтов, не адреса целиком, не вкладки из приватных окон и не сайты из списка исключений (почта, мессенджеры, банки). Ключ OpenRouter вводится в настройках мода и хранится только в браузере.
+
+## Credits
+
+The broom icon and the idea of a button next to *Clear* come from [Zen Tidy Tabs](https://github.com/Vertex-Mods/Zen-Tidy-Tabs) by Vertex. Everything else here is original code.
 
 ## License
 

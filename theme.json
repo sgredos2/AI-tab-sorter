@@ -1,0 +1,21 @@
+{
+  "id": "openrouter-tab-sorter",
+  "name": "OpenRouter Tab Sorter",
+  "description": "Sorts the loose tabs of your space into Zen folders with an AI model of your choice through OpenRouter. One click, a few hundredths of a cent.",
+  "homepage": "https://github.com/sgredos2/AI-tab-sorter",
+  "readme": "https://raw.githubusercontent.com/sgredos2/AI-tab-sorter/main/README.md",
+  "image": "",
+  "author": "sgredos2",
+  "version": "1.0.0",
+  "style": {
+    "chrome": "chrome.css"
+  },
+  "scripts": {
+    "tab-sorter.uc.js": {
+      "include": ["chrome://browser/content/browser.xhtml"]
+    }
+  },
+  "preferences": "preferences.json",
+  "tags": ["tabs", "folders", "ai", "openrouter", "organize"],
+  "fork": ["zen"]
+}

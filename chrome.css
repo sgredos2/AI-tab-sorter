@@ -1,0 +1,38 @@
+#tabsorter-button {
+  list-style-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='context-fill' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 4.5a1 1 0 0 1 1-1h3l1.2 1.5H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z'/%3E%3Cpath d='M8 7.6l.5 1.2 1.2.5-1.2.5L8 11l-.5-1.2-1.2-.5 1.2-.5z' fill='context-fill'/%3E%3C/svg%3E");
+  -moz-context-properties: fill, stroke;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+#tabsorter-button[busy] {
+  opacity: 0.5;
+  animation: tabsorter-pulse 1s ease-in-out infinite;
+}
+
+@keyframes tabsorter-pulse {
+  50% { opacity: 1; }
+}
+
+#tabsorter-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 12px);
+  max-width: min(520px, 80vw);
+  padding: 9px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--toolbar-bgcolor, #222) 88%, black);
+  color: var(--toolbar-color, #eee);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  font: 13px system-ui, sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 100000;
+}
+
+#tabsorter-toast[show] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

@@ -1,0 +1,64 @@
+[
+  {
+    "type": "string",
+    "label": "OpenRouter API key",
+    "property": "tabsorter.api_key",
+    "placeholder": "sk-or-...",
+    "defaultValue": "",
+    "description": "From openrouter.ai/keys. Stored only in this browser's settings."
+  },
+  {
+    "type": "string",
+    "label": "Model",
+    "property": "tabsorter.model",
+    "placeholder": "z-ai/glm-5.3-flash",
+    "defaultValue": "z-ai/glm-5.3-flash",
+    "description": "Any OpenRouter model name. A small, cheap one is enough."
+  },
+  {
+    "type": "string",
+    "label": "Provider order (optional)",
+    "property": "tabsorter.provider",
+    "placeholder": "Wafer",
+    "defaultValue": "",
+    "description": "Provider names tried in order, separated by commas. Empty: OpenRouter chooses. Other providers are used if these fail."
+  },
+  {
+    "type": "dropdown",
+    "label": "Most new folders per sort",
+    "property": "tabsorter.max_groups",
+    "defaultValue": "8",
+    "options": [
+      { "label": "4", "value": "4" },
+      { "label": "6", "value": "6" },
+      { "label": "8", "value": "8" },
+      { "label": "12", "value": "12" }
+    ]
+  },
+  {
+    "type": "checkbox",
+    "label": "Send each tab's site name along with its title (off: titles only)",
+    "property": "tabsorter.send_hosts",
+    "defaultValue": true
+  },
+  {
+    "type": "string",
+    "label": "Never send tabs from these sites",
+    "property": "tabsorter.exclude",
+    "defaultValue": "mail.google.com,outlook.live.com,outlook.office.com,web.whatsapp.com,web.telegram.org,accounts.google.com,paypal,bank,sber,tinkoff,alfabank,vtb,gosuslugi",
+    "description": "Words separated by commas: a tab whose address contains one is left alone and never leaves your computer."
+  },
+  {
+    "type": "checkbox",
+    "label": "Button in the sidebar",
+    "property": "tabsorter.button",
+    "defaultValue": true,
+    "description": "Applies after a restart."
+  },
+  {
+    "type": "checkbox",
+    "label": "Alt+Shift+G sorts the tabs",
+    "property": "tabsorter.shortcut",
+    "defaultValue": true
+  }
+]

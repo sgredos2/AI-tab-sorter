@@ -490,7 +490,38 @@ Rules:
     }
   }
 
+  // Zen shows "Clear" only while its row is hovered: the button follows it
+  // (hidden, it takes no room, so the line stays whole)
+  function syncVisibility() {
+    for (const line of document.querySelectorAll(".pinned-tabs-container-separator")) {
+      const button = line.querySelector(".tabsorter-button");
+      const clear = line.querySelector(".zen-workspace-close-unpinned-tabs-button");
+      if (!button || !clear) {
+        continue;
+      }
+      let visible = false;
+      try {
+        const style = getComputedStyle(clear);
+        visible = parseFloat(style.opacity) > 0.1 && style.visibility !== "hidden" && style.display !== "none";
+      } catch (err) {}
+      button.toggleAttribute("show", visible);
+    }
+  }
+
   function watchButtons() {
+    let last = 0;
+    document.addEventListener(
+      "mousemove",
+      () => {
+        const now = Date.now();
+        if (now - last > 80) {
+          last = now;
+          syncVisibility();
+        }
+      },
+      true
+    );
+    document.addEventListener("mouseleave", () => setTimeout(syncVisibility, 300), true);
     let timer = null;
     const schedule = () => {
       clearTimeout(timer);
@@ -541,7 +572,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.4" };
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.5" };
   setTimeout(watchButtons, 1500);
   addMenuItem();
   addShortcut();

@@ -3,13 +3,26 @@
   color: inherit;
   min-width: 0;
   width: auto;
+  max-width: 0;
   height: 22px;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, max-width 0.15s, background 0.15s;
+  flex: none;
+}
+
+.tabsorter-button[show],
+.tabsorter-button[busy],
+.pinned-tabs-container-separator:hover .tabsorter-button {
+  max-width: 28px;
   margin: 0 2px 0 0;
   padding: 0 4px;
-  border-radius: 6px;
   opacity: 0.7;
-  transition: opacity 0.15s, background 0.15s;
-  flex: none;
+  pointer-events: auto;
 }
 
 .tabsorter-button .toolbarbutton-icon {
@@ -24,7 +37,8 @@
   display: none;
 }
 
-.tabsorter-button:hover {
+.tabsorter-button[show]:hover,
+.pinned-tabs-container-separator:hover .tabsorter-button:hover {
   opacity: 1;
   background: color-mix(in srgb, currentColor 14%, transparent);
 }

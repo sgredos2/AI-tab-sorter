@@ -432,15 +432,25 @@ Rules:
   }
 
   // ---------- where you start it
-  const SPARKLES =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='context-fill'%3E%3Cpath d='M6.2 2.2l1 2.9 2.9 1-2.9 1-1 2.9-1-2.9-2.9-1 2.9-1z'/%3E%3Cpath d='M12 8.6l.6 1.7 1.7.6-1.7.6L12 13.2l-.6-1.7-1.7-.6 1.7-.6z'/%3E%3Cpath d='M12.3 1.8l.4 1.1 1.1.4-1.1.4-.4 1.1-.4-1.1-1.1-.4 1.1-.4z'/%3E%3C/svg%3E";
+  // (a plain colour baked into the picture: context-fill isn't honoured for data: icons)
+  function sparkles(color) {
+    const fill = String(color || "rgba(204,204,204,0.9)").replace(/[^a-z0-9#%.,() -]/gi, "");
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="${fill}">` +
+      `<path d="M6.2 2.2l1 2.9 2.9 1-2.9 1-1 2.9-1-2.9-2.9-1 2.9-1z"/>` +
+      `<path d="M12 8.6l.6 1.7 1.7.6-1.7.6L12 13.2l-.6-1.7-1.7-.6 1.7-.6z"/>` +
+      `<path d="M12.3 1.8l.4 1.1 1.1.4-1.1.4-.4 1.1-.4-1.1-1.1-.4 1.1-.4z"/></svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  }
 
   // The button wears the colour of Zen's own "Clear" next to it
   function matchColor(button, like) {
     try {
       const color = getComputedStyle(like).color;
-      if (color && button.style.color !== color) {
+      if (color && button.dataset.tabsorterColor !== color) {
+        button.dataset.tabsorterColor = color;
         button.style.color = color;
+        button.setAttribute("image", sparkles(color));
       }
     } catch (err) {}
   }
@@ -463,7 +473,7 @@ Rules:
       const button = document.createXULElement("toolbarbutton");
       button.className = "tabsorter-button";
       button.setAttribute("tooltiptext", "Sort tabs into groups (AI)");
-      button.setAttribute("image", SPARKLES);
+      button.setAttribute("image", sparkles());
       button.addEventListener("command", sortTabs);
       button.addEventListener("click", (event) => {
         if (event.button === 0) {
@@ -531,7 +541,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.2" };
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.1.3" };
   setTimeout(watchButtons, 1500);
   addMenuItem();
   addShortcut();

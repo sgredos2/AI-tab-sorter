@@ -3,7 +3,7 @@
 A [Sine](https://github.com/CosmoCreeper/Sine) mod for [Zen Browser](https://zen-browser.app). One click sorts the loose tabs of your current space into tab groups (or Zen folders, your choice), named and given an emoji icon by an AI model you pick on [OpenRouter](https://openrouter.ai).
 
 - Fits tabs into your existing groups first, and makes new ones only for tabs that share a topic.
-- The model also picks an emoji icon (and a colour for tab groups) for each new group.
+- The model also picks an icon (and a colour for tab groups) for each new group: a line icon from [Zia](https://github.com/z1n-k/zia)'s Tabler pack when Zia is installed, an emoji otherwise.
 - Never touches pinned tabs, essentials, splits or tabs already in a folder.
 - Cheap: a sort of ~30 tabs is about 1-2 thousand tokens, a few hundredths of a cent with a small model such as `z-ai/glm-5.3-flash`.
 - Original code, written from scratch (not a fork of another tab-sorting mod).
@@ -31,7 +31,8 @@ Sorting sends, for each loose tab, **its title and its site name** (for example 
 | Model | Default `z-ai/glm-5.3-flash`; any OpenRouter model works. |
 | Provider order | Optional, e.g. `Wafer`. Others are used if these fail. |
 | Sort into | Tab groups (default) or Zen folders. |
-| Emoji icons | Let the model pick an icon for each new group. |
+| Icons | Let the model pick an icon for each new group. |
+| Icon style | Line icons from Zia's Tabler pack (default; emoji if Zia isn't installed) or emoji. |
 | Most new groups | 4 / 6 / 8 / 12. |
 | Send site name | Off: titles only. |
 | Never send tabs from | Comma-separated words matched against the address. |

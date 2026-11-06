@@ -18,6 +18,7 @@
     button: "tabsorter.button",
     mode: "tabsorter.mode",
     icons: "tabsorter.icons",
+    iconStyle: "tabsorter.icon_style",
     shortcut: "tabsorter.shortcut",
   };
   const DEFAULTS = {
@@ -87,6 +88,59 @@
     return "";
   }
 
+  function cleanSymbol(text) {
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+  }
+
+  // The best Tabler icon for a word. entries are "name|styles|search words"
+  // (Zia's tabler-names.js); only outline ones ("o" in styles) are used.
+  function pickTabler(symbol, entries) {
+    const word = cleanSymbol(symbol);
+    if (!word || !Array.isArray(entries)) {
+      return "";
+    }
+    const parts = word.split("-").filter(Boolean);
+    let best = "";
+    let bestScore = 0;
+    for (const entry of entries) {
+      const [name, styles = "", words = ""] = String(entry).split("|");
+      if (!styles.includes("o")) {
+        continue;
+      }
+      const tags = ` ${words} `;
+      let score = 0;
+      if (name === word) {
+        score = 1000;
+      } else if (name.startsWith(word + "-")) {
+        score = 600 - name.length;
+      } else if (name.startsWith(word)) {
+        score = 560 - name.length;
+      } else if (parts.length > 1 && parts.every((part) => name.split("-").includes(part))) {
+        score = 500 - name.length;
+      } else if (name.split("-").includes(word)) {
+        score = 400 - name.length;
+      } else if (name.includes(word)) {
+        score = 300 - name.length;
+      } else if (tags.includes(` ${word} `)) {
+        score = 200 - name.length;
+      } else if (parts.length > 1 && parts.every((part) => tags.includes(` ${part} `))) {
+        score = 150 - name.length;
+      }
+      if (/-off$|-filled$/.test(name)) {
+        score -= 40;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = name;
+      }
+    }
+    return best;
+  }
+
   function emojiSvg(emoji) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text x="8" y="13" font-size="13" text-anchor="middle">${emoji}</text></svg>`;
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -101,14 +155,14 @@
   const SYSTEM_PROMPT = `You sort a person's open browser tabs into groups by topic.
 You get a numbered list of tabs ("number. [site] title") and the names of groups that already exist.
 Answer with ONLY a JSON object, no other text:
-{"groups":[{"name":"Group name","icon":"🚗","color":"blue","tabs":[0,3,5]}]}
+{"groups":[{"name":"Group name","icon":"🚗","symbol":"car","color":"blue","tabs":[0,3,5]}]}
 Rules:
 - Put a tab in an existing group (use its name exactly) when it clearly fits that group.
 - Otherwise make a new group only when at least 2 tabs share a topic, task or project.
 - A tab that fits nothing is left out. Never force a tab into a group.
 - A tab is in at most one group.
 - Names are 1-3 words, specific (not "Misc" or "Other"), in the language most of the titles are written in.
-- "icon" is ONE emoji that suits the group's topic. "color" is one of: COLORS.
+- "icon" is ONE emoji that suits the group's topic. "symbol" is ONE lowercase English word (or two joined with a hyphen) for a simple line icon of the topic, like "car", "code", "video", "shopping-cart", "book", "chat". "color" is one of: COLORS.
 - At most MAX new groups.`;
 
   function buildMessages(items, folderNames, maxGroups, sendHosts) {
@@ -169,7 +223,7 @@ Rules:
           fresh++;
         }
         const color = COLORS.includes(String(group.color || "").toLowerCase()) ? String(group.color).toLowerCase() : "";
-        merged.set(key, { name: existing || name, existing, icon: pickEmoji(group.icon), color, indices: [] });
+        merged.set(key, { name: existing || name, existing, icon: pickEmoji(group.icon), symbol: cleanSymbol(group.symbol), color, indices: [] });
       }
       for (const i of indices) {
         taken.add(i);
@@ -180,7 +234,7 @@ Rules:
     return [...merged.values()].filter((g) => g.existing || g.indices.length >= 2);
   }
 
-  globalThis.__tabSorterHelpers = { isExcluded, cleanLabel, shortTitle, pickEmoji, emojiSvg, buildMessages, parseAnswer, DEFAULTS };
+  globalThis.__tabSorterHelpers = { isExcluded, cleanLabel, shortTitle, pickEmoji, cleanSymbol, pickTabler, emojiSvg, buildMessages, parseAnswer, DEFAULTS };
 
   if (typeof location === "undefined" || location.href !== "chrome://browser/content/browser.xhtml" || window.__tabSorter) {
     return;
@@ -334,32 +388,75 @@ Rules:
     }
   }
 
-  // The model's emoji as the group's icon: a Zen folder's icon, or the icon
-  // of Advanced Tab Groups when that mod is there; else the emoji leads the name
-  async function applyIcon(container, emoji, name) {
-    if (!emoji || !container) {
+  // Zia's Tabler icon pack (its names list and its resource:// host), when Zia is installed
+  let tablerNames;
+  function tablerList() {
+    if (tablerNames !== undefined) {
+      return tablerNames;
+    }
+    tablerNames = null;
+    try {
+      const holder = {};
+      Services.scriptloader.loadSubScript("chrome://sine/content/zia/icons/tabler-names.js", holder);
+      if (Array.isArray(holder.ZiaTablerIcons) && holder.ZiaTablerIcons.length) {
+        tablerNames = holder.ZiaTablerIcons;
+      }
+    } catch (err) {}
+    return tablerNames;
+  }
+
+  // The icon's address, once it's known to load
+  async function tablerIconFor(symbol) {
+    const list = tablerList();
+    const name = list ? pickTabler(symbol, list) : "";
+    if (!name) {
+      return "";
+    }
+    const url = `resource://zia-tabler/outline/${name}.svg`;
+    try {
+      const response = await fetch(url);
+      return response.ok ? url : "";
+    } catch (err) {
+      return "";
+    }
+  }
+
+  // The model's icon for a new group: a Tabler icon from Zia's pack (as the
+  // rest of the sidebar) or its emoji. A Zen folder takes it as its icon, a
+  // tab group through Advanced Tab Groups; if neither can, the emoji leads the name
+  async function applyIcon(container, group) {
+    if (!container || (!group.icon && !group.symbol)) {
+      return;
+    }
+    const { icon: emoji, symbol, name } = group;
+    const wantsTabler = String(readPref(PREFS.iconStyle, "tabler")) !== "emoji";
+    const url = wantsTabler ? await tablerIconFor(symbol) : "";
+    const value = url || emoji;
+    if (!value) {
       return;
     }
     try {
       if (container.localName === "zen-folder" && window.gZenFolders?.setFolderUserIcon) {
-        window.gZenFolders.setFolderUserIcon(container, emojiSvg(emoji));
+        window.gZenFolders.setFolderUserIcon(container, url || emojiSvg(emoji));
         container.dispatchEvent(new CustomEvent("TabGroupUpdate", { bubbles: true }));
         if (container.iconURL) {
           return;
         }
       } else if (window.advancedTabGroups?.applyGroupIcon) {
-        await window.advancedTabGroups.applyGroupIcon(container, emoji);
-        const icon = container.querySelector?.(".tab-group-icon");
-        if (icon && (icon.childElementCount || icon.textContent.trim() || icon.style.cssText || icon.getAttribute("src"))) {
+        await window.advancedTabGroups.applyGroupIcon(container, value);
+        const slot = container.querySelector?.(".tab-group-icon");
+        if (slot && (slot.childElementCount || slot.textContent.trim() || slot.style.cssText || slot.getAttribute("src"))) {
           return;
         }
       }
     } catch (err) {
       console.warn("[Tab Sorter] Couldn't set the icon:", err);
     }
-    try {
-      container.label = `${emoji} ${name}`;
-    } catch (err) {}
+    if (emoji) {
+      try {
+        container.label = `${emoji} ${name}`;
+      } catch (err) {}
+    }
   }
 
   async function sortTabs() {
@@ -417,7 +514,7 @@ Rules:
             }
             made++;
             if (useIcons) {
-              await applyIcon(created || tabs[0]?.group, group.icon, group.name);
+              await applyIcon(created || tabs[0]?.group, group);
             }
           }
           moved += tabs.length;
@@ -663,7 +760,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.3.0" };
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.4.0" };
   setTimeout(watchButtons, 1500);
   addMenuItem();
   addShortcut();

@@ -18,4 +18,9 @@ assert.equal(h.pickEmoji("  🚗 cars"),"🚗"); assert.equal(h.pickEmoji("cars"
 const q=h.parseAnswer('{"groups":[{"name":"Cars","icon":"🚗","color":"Blue","tabs":[0,1]},{"name":"Food","icon":"x","color":"mauve","tabs":[2,3]}]}',4,[],5);
 assert.equal(q[0].icon,"🚗"); assert.equal(q[0].color,"blue"); assert.equal(q[1].icon,""); assert.equal(q[1].color,"");
 assert(h.emojiSvg("🚗").startsWith("data:image/svg+xml"));
+const names=["car|of|vehicle auto drive","car-off|o|vehicle","car-crane|o|vehicle","carrot|o|vegetable food","code|o|programming developer","video|of|movie film camera","shopping-cart|o|buy store","shopping-cart-off|o|buy","book|of|read library","brand-youtube|of|video play","cat|f|animal pet"];
+assert.equal(h.pickTabler("car",names),"car"); assert.equal(h.pickTabler("shopping-cart",names),"shopping-cart");
+assert.equal(h.pickTabler("movie",names),"video"); assert.equal(h.pickTabler("developer",names),"code"); assert.equal(h.pickTabler("cat",names),""); assert.equal(h.pickTabler("",names),"");
+assert.equal(h.cleanSymbol(" Shopping Cart!"),"shopping-cart");
+const w=h.parseAnswer('{"groups":[{"name":"Cars","icon":"🚗","symbol":"Car","tabs":[0,1]}]}',2,[],5); assert.equal(w[0].symbol,"car");
 console.log("all ok");

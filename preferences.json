@@ -41,10 +41,26 @@
   },
   {
     "type": "checkbox",
-    "label": "Let the model pick an emoji icon for each new group",
+    "label": "Let the model pick an icon for each new group",
     "property": "tabsorter.icons",
     "defaultValue": true,
-    "description": "A folder gets it as its icon; a tab group gets it too with Advanced Tab Groups installed, otherwise the emoji leads its name."
+    "description": "A Zen folder gets it as its icon; a tab group too with Advanced Tab Groups installed, otherwise the emoji leads its name."
+  },
+  {
+    "type": "dropdown",
+    "label": "Icon style",
+    "property": "tabsorter.icon_style",
+    "defaultValue": "tabler",
+    "options": [
+      {
+        "label": "Line icons from Zia's pack (emoji if Zia isn't installed)",
+        "value": "tabler"
+      },
+      {
+        "label": "Emoji",
+        "value": "emoji"
+      }
+    ]
   },
   {
     "type": "dropdown",

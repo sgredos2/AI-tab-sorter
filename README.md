@@ -16,7 +16,7 @@ A [Sine](https://github.com/CosmoCreeper/Sine) mod for [Zen Browser](https://zen
 
 ## Use
 
-- **Alt+Shift+G**, the sparkles button on the line above the loose tabs (next to *Clear*), or right-click a tab → *Sort tabs into groups (AI)*.
+- **Alt+Shift+G**, the brush button on the line above the loose tabs (next to *Clear*), or right-click a tab → *Sort tabs into groups (AI)*.
 - Select several tabs first to sort only those.
 
 ## Privacy

@@ -353,13 +353,24 @@ Rules:
   }
 
   // ---------- where you start it
-  function addButton() {
-    document.getElementById("tabsorter-button")?.remove();
+  // (the sidebar's bottom bar is built after this script runs, so wait for it)
+  function addButton(attempt = 0) {
     if (readPref(PREFS.button, true) === false) {
+      document.getElementById("tabsorter-button")?.remove();
       return;
     }
-    const foot = document.getElementById("zen-sidebar-foot-buttons");
+    if (document.getElementById("tabsorter-button")) {
+      return;
+    }
+    const foot =
+      document.getElementById("zen-sidebar-foot-buttons") ||
+      (attempt >= 40 ? document.getElementById("zen-sidebar-top-buttons") || document.getElementById("nav-bar") : null);
     if (!foot) {
+      if (attempt < 80) {
+        setTimeout(() => addButton(attempt + 1), 500);
+      } else {
+        log("couldn't find a place for the button; use Alt+Shift+G or the tab menu");
+      }
       return;
     }
     const button = document.createXULElement("toolbarbutton");
@@ -368,11 +379,18 @@ Rules:
     button.setAttribute("tooltiptext", "Sort tabs into folders (AI)");
     button.addEventListener("command", sortTabs);
     foot.appendChild(button);
+    log("button added to", foot.id);
   }
 
-  function addMenuItem() {
+  function addMenuItem(attempt = 0) {
     const menu = document.getElementById("tabContextMenu");
-    if (!menu || document.getElementById("tabsorter-menuitem")) {
+    if (!menu) {
+      if (attempt < 40) {
+        setTimeout(() => addMenuItem(attempt + 1), 500);
+      }
+      return;
+    }
+    if (document.getElementById("tabsorter-menuitem")) {
       return;
     }
     const item = document.createXULElement("menuitem");
@@ -403,7 +421,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, version: "1.0.0" };
+  window.__tabSorter = { sort: sortTabs, collectTabs, version: "1.0.1" };
   addButton();
   addMenuItem();
   addShortcut();

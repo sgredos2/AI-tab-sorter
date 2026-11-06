@@ -381,6 +381,7 @@ Rules:
       return;
     }
     setBusy(true);
+    startWave();
     toast("Sorting tabs…", 60000);
     try {
       const existing = containersInSpace(mode);
@@ -430,6 +431,7 @@ Rules:
       console.warn("[Tab Sorter]", err);
       toast(err?.message || String(err), 6000);
     } finally {
+      stopWave();
       setBusy(false);
     }
   }
@@ -449,6 +451,127 @@ Rules:
     } catch (err) {}
   }
 
+  // The colour Zen paints the divider with (Clear paints its own 1px segment
+  // of it while idle, the rest is the toolbarseparator): the idle button and
+  // the wave use exactly that colour, so the line reads as one
+  function lineColorOf(line) {
+    const visible = (c) => c && c !== "transparent" && !/rgba\([^)]*,\s*0\)$/.test(c);
+    try {
+      const clear = line.querySelector(".zen-workspace-close-unpinned-tabs-button");
+      if (clear && !line.matches(":hover")) {
+        const c = getComputedStyle(clear).backgroundColor;
+        if (visible(c)) {
+          return c;
+        }
+      }
+      const sep = line.querySelector("toolbarseparator");
+      if (sep) {
+        const st = getComputedStyle(sep);
+        if (parseFloat(st.borderTopWidth) > 0 && visible(st.borderTopColor)) {
+          return st.borderTopColor;
+        }
+        if (parseFloat(st.borderBottomWidth) > 0 && visible(st.borderBottomColor)) {
+          return st.borderBottomColor;
+        }
+        if (visible(st.backgroundColor)) {
+          return st.backgroundColor;
+        }
+      }
+    } catch (err) {}
+    return "";
+  }
+
+  function matchLine(line) {
+    if (line.matches(":hover") || line.classList.contains("tabsorter-sorting")) {
+      return;
+    }
+    const color = lineColorOf(line);
+    if (color && line.style.getPropertyValue("--tabsorter-line") !== color) {
+      line.style.setProperty("--tabsorter-line", color);
+    }
+  }
+
+  // ---------- the wave the divider turns into while sorting (as Tidy Tabs does)
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  let waveFrame = null;
+
+  function ensureWave(line) {
+    if (line.querySelector(":scope > svg.tabsorter-wave")) {
+      return;
+    }
+    const svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("class", "tabsorter-wave");
+    svg.setAttribute("viewBox", "0 0 100 2");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", "M 0 1 L 100 1");
+    path.setAttribute("stroke-width", "1");
+    path.setAttribute("stroke-linecap", "round");
+    svg.appendChild(path);
+    try {
+      if (getComputedStyle(line).position === "static") {
+        line.style.position = "relative";
+      }
+    } catch (err) {}
+    line.appendChild(svg);
+  }
+
+  function activeLines() {
+    const own = window.gZenWorkspaces?.activeWorkspaceElement?.querySelectorAll?.(".pinned-tabs-container-separator");
+    return own?.length ? [...own] : [...document.querySelectorAll(".pinned-tabs-container-separator")];
+  }
+
+  function startWave() {
+    stopWave();
+    const lines = activeLines();
+    const paths = [];
+    for (const line of lines) {
+      ensureWave(line);
+      matchLine(line);
+      line.classList.add("tabsorter-sorting");
+      const path = line.querySelector(":scope > svg.tabsorter-wave path");
+      if (path) {
+        paths.push(path);
+      }
+    }
+    const maxAmplitude = 3;
+    const frequency = 8;
+    const segments = 50;
+    const growth = 500;
+    const start = performance.now();
+    let t = 0;
+    const step = (now) => {
+      const amplitude = maxAmplitude * Math.min((now - start) / growth, 1);
+      t += 0.5;
+      const points = [];
+      for (let i = 0; i <= segments; i++) {
+        const x = (i / segments) * 100;
+        const y = 1 + amplitude * Math.sin((x / (100 / frequency)) * 2 * Math.PI + t * 0.1);
+        points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+      }
+      const d = "M" + points.join(" L");
+      for (const path of paths) {
+        if (path.isConnected) {
+          path.setAttribute("d", d);
+        }
+      }
+      waveFrame = requestAnimationFrame(step);
+    };
+    waveFrame = requestAnimationFrame(step);
+  }
+
+  function stopWave() {
+    if (waveFrame !== null) {
+      cancelAnimationFrame(waveFrame);
+      waveFrame = null;
+    }
+    for (const line of document.querySelectorAll(".pinned-tabs-container-separator.tabsorter-sorting")) {
+      line.classList.remove("tabsorter-sorting");
+      line.querySelector(":scope > svg.tabsorter-wave path")?.setAttribute("d", "M 0 1 L 100 1");
+    }
+  }
+
   // Each space has a line between its pinned and loose tabs (with Zen's "Clear"
   // on it): the button sits there, just before "Clear"
   function placeButtons() {
@@ -459,6 +582,8 @@ Rules:
     const lines = document.querySelectorAll(".pinned-tabs-container-separator");
     const CLEAR = ".zen-workspace-close-unpinned-tabs-button, #zen-workspaces-close-unpinned-tabs-button, [class*='close-unpinned'], [class*='clear']";
     for (const line of lines) {
+      ensureWave(line);
+      matchLine(line);
       const have = line.querySelector(".tabsorter-button");
       if (have) {
         matchColor(have, line.querySelector(CLEAR) || line);
@@ -467,7 +592,11 @@ Rules:
       const button = window.MozXULElement.parseXULToFragment(
         `<toolbarbutton class="tabsorter-button" tooltiptext="Sort tabs into groups (AI)">${BROOM_SVG}</toolbarbutton>`
       ).firstChild.cloneNode(true);
-      button.addEventListener("command", sortTabs);
+      button.addEventListener("command", () => {
+        button.classList.add("brushing");
+        setTimeout(() => button.isConnected && button.classList.remove("brushing"), 800);
+        sortTabs();
+      });
       button.addEventListener("click", (event) => {
         if (event.button === 0) {
           event.stopPropagation();
@@ -534,7 +663,7 @@ Rules:
     );
   }
 
-  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.2.0" };
+  window.__tabSorter = { sort: sortTabs, collectTabs, place: placeButtons, version: "1.3.0" };
   setTimeout(watchButtons, 1500);
   addMenuItem();
   addShortcut();

@@ -49,7 +49,7 @@ Sorting sends, for each loose tab, **its title and its site name** (for example 
 
 ## Credits
 
-The broom icon and the idea of a button next to *Clear* come from [Zen Tidy Tabs](https://github.com/Vertex-Mods/Zen-Tidy-Tabs) by Vertex. Everything else here is original code.
+The broom icon, the button next to *Clear* and the wave the divider turns into while sorting come from [Zen Tidy Tabs](https://github.com/Vertex-Mods/Zen-Tidy-Tabs) by Vertex. Everything else here is original code.
 
 ## License
 

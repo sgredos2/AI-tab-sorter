@@ -1,74 +1,155 @@
 @keyframes tabsorter-sweep {
-  0%, 100% { transform: rotate(0deg); }
-  20%, 60% { transform: rotate(-15deg); }
-  40%, 80% { transform: rotate(15deg); }
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(-15deg); }
+  40% { transform: rotate(15deg); }
+  60% { transform: rotate(-15deg); }
+  80% { transform: rotate(15deg); }
+  100% { transform: rotate(0deg); }
 }
 
+.pinned-tabs-container-separator:has(.tabsorter-button) {
+  overflow: visible !important;
+}
+
+/* Idle: the button IS a piece of the divider, a real 1px bar in the
+   divider's own colour, so the line stays whole. Hovered, it becomes the
+   broom, 8px before Zen's "Clear" (as in Zen Tidy Tabs). */
 .pinned-tabs-container-separator .tabsorter-button {
   appearance: none !important;
-  /* idle: the button is a real 1px bar in the divider's colour, so the line
-     stays whole; hovered, it becomes the brush (like Zen's own Clear) */
   height: 1px !important;
   min-height: 0 !important;
-  min-width: 0;
-  margin: 0 !important;
-  padding: 0 !important;
+  background: var(--tabsorter-line, var(--zen-pinned-separator-color)) !important;
   border: none !important;
-  background: var(--zen-pinned-separator-color) !important;
+  opacity: 1 !important;
+  visibility: visible;
+  font-size: 10px !important;
+  font-weight: 500;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 0;
   overflow: hidden;
   pointer-events: none;
-  flex-shrink: 0;
-  color: inherit;
-  fill: currentColor;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap;
+  -moz-context-properties: fill, fill-opacity !important;
+  fill: currentColor !important;
+
+  & .toolbarbutton-icon,
+  & .toolbarbutton-text {
+    display: none !important;
+  }
+
+  & .tabsorter-broom {
+    width: 10px !important;
+    height: 10px !important;
+    opacity: 0;
+    transition: opacity 0.15s, transform 0.15s ease-in-out;
+    transform: translateY(0px);
+    fill: currentColor !important;
+  }
+
+  & .tabsorter-broom path {
+    fill: currentColor !important;
+  }
+
+  @starting-style {
+    & .tabsorter-broom {
+      transform: translateY(-2px);
+    }
+  }
+
+  &:active:hover .tabsorter-broom {
+    transform: translateY(2px);
+  }
+
+  &.brushing .tabsorter-broom {
+    animation: tabsorter-sweep 0.8s ease-in-out;
+    transform-origin: 50% 50%;
+  }
+
+  #navigator-toolbox[zen-has-implicit-hover="true"] & {
+    height: auto !important;
+    background: none !important;
+    margin-inline-start: 8px !important;
+    pointer-events: auto;
+
+    & .tabsorter-broom {
+      opacity: 0.5;
+    }
+  }
+
+  :root:not([zen-sidebar-expanded="true"]) & {
+    display: none;
+  }
 }
 
-.tabsorter-button .toolbarbutton-icon,
-.tabsorter-button .toolbarbutton-text {
-  display: none !important;
+.pinned-tabs-container-separator:hover {
+  & .tabsorter-button {
+    height: auto !important;
+    background: none !important;
+    margin-inline-start: 8px !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+
+    & .tabsorter-broom {
+      opacity: 0.5;
+    }
+  }
+
+  & .tabsorter-button:hover .tabsorter-broom {
+    opacity: 1 !important;
+  }
 }
 
-.tabsorter-button .tabsorter-broom {
-  width: 10px;
-  height: 10px;
-  fill: currentColor;
+[lwt-toolbar="light"] .pinned-tabs-container-separator .tabsorter-button {
+  color: rgba(0, 0, 0, 0.6);
+
+  &:hover {
+    color: black;
+  }
+}
+
+/* the wave: drawn over the divider, never in its layout */
+.pinned-tabs-container-separator svg.tabsorter-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  width: 100% !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block;
+  overflow: visible;
+  pointer-events: none !important;
   opacity: 0;
-  transition: opacity 0.15s, transform 0.15s ease-in-out;
+  transition: opacity 0.15s ease-in-out;
+
+  & path {
+    fill: none;
+    stroke: var(--tabsorter-line, light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.2)));
+  }
 }
 
-.tabsorter-button .tabsorter-broom path {
-  fill: currentColor;
+.pinned-tabs-container-separator.tabsorter-sorting {
+  & svg.tabsorter-wave {
+    opacity: 1;
+  }
+
+  & toolbarseparator,
+  & .tabsorter-button,
+  & .zen-workspace-close-unpinned-tabs-button {
+    opacity: 0 !important;
+  }
 }
 
-.pinned-tabs-container-separator:hover .tabsorter-button,
-#navigator-toolbox[zen-has-implicit-hover="true"] .pinned-tabs-container-separator .tabsorter-button {
-  height: auto !important;
-  background: none !important;
-  margin-inline-start: 8px !important;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.pinned-tabs-container-separator:hover .tabsorter-broom,
-#navigator-toolbox[zen-has-implicit-hover="true"] .tabsorter-broom {
-  opacity: 0.5;
-}
-
-.pinned-tabs-container-separator:hover .tabsorter-button:hover .tabsorter-broom {
-  opacity: 1;
-}
-
-.pinned-tabs-container-separator .tabsorter-button:active:hover .tabsorter-broom {
-  transform: translateY(2px);
-}
-
-.tabsorter-button[busy] .tabsorter-broom {
-  opacity: 1 !important;
-  animation: tabsorter-sweep 0.8s ease-in-out infinite;
-  transform-origin: 50% 50%;
-}
-
-:root:not([zen-sidebar-expanded="true"]) .tabsorter-button {
-  display: none;
+/* the Library's copies of the sidebar */
+:is(.zen-library-spaces, .zen-library-space-tabs) :is(.tabsorter-button, svg.tabsorter-wave) {
+  display: none !important;
 }
 
 #tabsorter-toast {
